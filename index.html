@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Playlist Organizer</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23dc2626'/%3E%3Cpath d='M22 28h32v6H22zm0 14h32v6H22zm0 14h24v6H22z' fill='%23ffffff' opacity='0.9'/%3E%3Cpath d='M62 30v40l28-20z' fill='%23ffffff'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.youtube.com/iframe_api" async></script>
+</head>
+<body>
+    <!-- ===== Header ===== -->
+    <header class="app-header">
+        <div class="header-brand">
+            <button id="sidebar-toggle" class="icon-btn" type="button" aria-label="Open navigation"
+                aria-controls="sidebar" aria-expanded="false">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <button id="nav-brand" class="brand" type="button" aria-label="Go to all videos">
+                <span class="brand__logo"><i class="fa-brands fa-youtube"></i></span>
+                <span class="brand__text">YT<span class="brand__accent"> Playlist Organizer</span></span>
+            </button>
+        </div>
+        <div class="header-search">
+            <input type="text" id="global-search" placeholder="Search across all playlists, videos"
+                aria-label="Search playlists and videos" autocomplete="off">
+            <i class="fa-solid fa-magnifying-glass header-search__icon" aria-hidden="true"></i>
+            <button id="clear-search" class="header-search__clear" type="button" aria-label="Clear search" hidden>
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="header-stats" aria-label="Workspace totals">
+            <span class="header-stat header-stat--playlists" title="Total playlists in this workspace">
+                <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                <strong id="stat-playlists-count">0</strong>
+                <span class="header-stat__label">Playlists</span>
+            </span>
+            <span class="header-stat__divider" aria-hidden="true"></span>
+            <span class="header-stat header-stat--videos" title="Total videos across all playlists">
+                <i class="fa-solid fa-video" aria-hidden="true"></i>
+                <strong id="stat-videos-count">0</strong>
+                <span class="header-stat__label">Videos</span>
+            </span>
+            <span class="header-stat__divider" aria-hidden="true"></span>
+            <span class="header-stat header-stat--duration" title="Combined duration of every video in all playlists">
+                <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                <strong id="stat-duration-count">0m</strong>
+                <span class="header-stat__label">Total</span>
+            </span>
+        </div>
+        <div class="header-actions">
+            <div class="data-menu">
+                <button id="btn-data-menu" class="header-btn header-btn--outline" type="button" title="Data menu"
+                    aria-label="Data menu" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa-solid fa-database ic-indigo"></i>
+                    <span class="header-btn__label">Data</span>
+                    <i class="fa-solid fa-chevron-down header-btn__label header-btn__caret"></i>
+                </button>
+                <div id="data-dropdown" class="dropdown" hidden>
+                    <button id="btn-export-json" class="dropdown__item" type="button">
+                        <i class="fa-solid fa-file-export ic-emerald"></i> Export JSON Data
+                    </button>
+                    <label class="dropdown__item">
+                        <i class="fa-solid fa-file-import ic-blue"></i> Import JSON Data
+                        <input type="file" id="file-import-json" accept=".json" hidden>
+                    </label>
+                    <button id="btn-export-text" class="dropdown__item" type="button">
+                        <i class="fa-solid fa-copy ic-amber"></i> Export Active Links Text
+                    </button>
+                </div>
+            </div>
+            <button id="btn-settings" class="header-btn" type="button" title="Settings & YouTube API key"
+                aria-label="Settings and YouTube API key">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button id="btn-import-modal-open" class="header-btn header-btn--purple" type="button" title="Import"
+                aria-label="Import">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+                <span class="header-btn__label">Import</span>
+            </button>
+            <button id="btn-new-playlist" class="header-btn header-btn--red" type="button" title="Create new playlist"
+                aria-label="Create new playlist">
+                <i class="fa-solid fa-plus"></i>
+                <span class="header-btn__label">New Playlist</span>
+            </button>
+        </div>
+    </header>
+    <!-- ===== Sidebar ===== -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+    <aside id="sidebar" class="sidebar" aria-label="Playlist navigation">
+        <div class="sidebar__mobile-head">
+            <strong><i class="fa-brands fa-youtube"></i> Library</strong>
+        </div>
+        <div class="sidebar__scroll">
+            <section class="sidebar__section">
+                <h2 class="sidebar__heading">Library Views</h2>
+                <button class="nav-item is-active" type="button" data-view="all">
+                    <span class="nav-item__label"><i class="fa-solid fa-globe ic-brand"></i> All Videos</span>
+                    <span id="badge-all-count" class="count">0</span>
+                </button>
+                <button class="nav-item" type="button" data-view="favorites">
+                    <span class="nav-item__label"><i class="fa-solid fa-star ic-amber"></i> Favorites</span>
+                    <span id="badge-favorites-count" class="count">0</span>
+                </button>
+                <button class="nav-item" type="button" data-view="watched">
+                    <span class="nav-item__label"><i class="fa-solid fa-clock ic-emerald"></i> Watched</span>
+                    <span id="badge-watched-count" class="count">0</span>
+                </button>
+                <button class="nav-item" type="button" data-view="unwatched">
+                    <span class="nav-item__label"><i class="fa-solid fa-circle-play ic-emerald"></i> Unwatched</span>
+                    <span id="badge-unwatched-count" class="count">0</span>
+                </button>
+            </section>
+            <section class="sidebar__section">
+                <h2 class="sidebar__heading">Tools &amp; Utilities</h2>
+                <button id="btn-open-merge-modal" class="nav-item nav-item--tool" type="button">
+                    <span class="nav-item__label"><i class="fa-solid fa-code-merge ic-purple"></i> Merge Playlists</span>
+                </button>
+                <button id="btn-open-bulk-modal" class="nav-item nav-item--tool" type="button">
+                    <span class="nav-item__label"><i class="fa-solid fa-list-check ic-blue"></i> Bulk Link Importer</span>
+                </button>
+            </section>
+            <section class="sidebar__section">
+                <div class="sidebar__heading-row">
+                    <h2 class="sidebar__heading">Your Playlists</h2>
+                    <button id="btn-sidebar-add-playlist" class="add-playlist-btn" type="button"
+                        title="Create playlist" aria-label="Create playlist">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div id="sidebar-playlists-list" class="playlist-nav"></div>
+            </section>
+        </div>
+        <div class="sidebar__status">
+            <span class="sidebar__status-info">
+                <span id="api-status-dot" class="status-dot"></span>
+                <span id="api-status-text">oEmbed Auto Mode</span>
+            </span>
+            <button id="btn-status-key-settings" class="sidebar__status-link" type="button">Key Settings</button>
+        </div>
+        <p class="sidebar__credit">Designed by
+            <a href="https://github.com/MuhammadIarHossain" target="_blank" rel="noopener">Muhammad iar Hossain</a>
+        </p>
+    </aside>
+    <!-- ===== Main workspace ===== -->
+    <main class="workspace">
+        <section id="playlist-header" class="playlist-header">
+            <div id="playlist-header-accent" class="playlist-header__accent"></div>
+            <div class="playlist-header__inner">
+                <div class="playlist-header__main">
+                    <div id="playlist-banner-thumb" class="playlist-header__thumb">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="playlist-header__text">
+                        <div class="playlist-header__badges">
+                            <span id="playlist-category-badge" class="badge badge--category">Category</span>
+                            <span id="playlist-video-count-badge" class="badge badge--meta">0 videos</span>
+                            <span id="playlist-duration-badge" class="badge badge--meta">
+                                <i class="fa-solid fa-clock ic-emerald"></i><span>0m</span>
+                            </span>
+                        </div>
+                        <h1 id="playlist-title-display" class="playlist-header__title">All Videos</h1>
+                        <p id="playlist-desc-display" class="playlist-header__desc"></p>
+                    </div>
+                </div>
+                <div id="playlist-actions" class="playlist-actions">
+                    <button id="btn-play-all" class="btn btn--green" type="button">
+                        <i class="fa-solid fa-circle-play"></i> Play All
+                    </button>
+                    <button id="btn-add-video" class="btn btn--red" type="button">
+                        <i class="fa-solid fa-video"></i> Add Video
+                    </button>
+                    <button id="btn-edit-playlist" class="icon-btn icon-btn--outline" type="button"
+                        title="Edit playlist info" aria-label="Edit playlist info" hidden>
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button id="btn-delete-playlist" class="icon-btn icon-btn--outline icon-btn--danger" type="button"
+                        title="Delete playlist" aria-label="Delete playlist" hidden>
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+        <div class="toolbar">
+            <div class="toolbar__filters" role="group" aria-label="Filter videos">
+                <button class="filter-pill is-active" type="button" data-filter="all">All</button>
+                <button class="filter-pill" type="button" data-filter="unwatched">Unwatched</button>
+                <button class="filter-pill" type="button" data-filter="watched">Watched</button>
+                <button class="filter-pill" type="button" data-filter="favorites">
+                    <i class="fa-solid fa-star ic-amber"></i> Favorites
+                </button>
+            </div>
+            <div class="toolbar__controls">
+                <label class="toolbar__sort">
+                    <i class="fa-solid fa-arrow-down-short-wide" aria-hidden="true"></i>
+                    <select id="sort-select" aria-label="Sort videos">
+                        <option value="newest">Date Added (Newest)</option>
+                        <option value="oldest">Date Added (Oldest)</option>
+                        <option value="title">Title (A-Z)</option>
+                        <option value="favorites">Favorites First</option>
+                    </select>
+                </label>
+                <div class="view-toggle" role="group" aria-label="Layout">
+                    <button id="view-mode-grid" class="view-toggle__btn is-active" type="button" title="Grid view"
+                        aria-label="Grid view" aria-pressed="true">
+                        <i class="fa-solid fa-grip-vertical"></i>
+                    </button>
+                    <button id="view-mode-list" class="view-toggle__btn" type="button" title="Compact list view"
+                        aria-label="Compact list view" aria-pressed="false">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="video-grid" class="video-grid"></div>
+        <div id="empty-state" class="empty-state" hidden>
+            <div class="empty-state__icon"><i class="fa-solid fa-film"></i></div>
+            <h3>No videos found</h3>
+            <p>Import YouTube playlists, paste video URLs, or try adjusting your search and filter criteria.</p>
+            <div class="empty-state__actions">
+                <button id="btn-empty-import" class="btn btn--purple" type="button">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Import Playlist
+                </button>
+                <button id="btn-empty-add-video" class="btn btn--red" type="button">
+                    <i class="fa-solid fa-plus"></i> Add Video
+                </button>
+            </div>
+        </div>
+    </main>
+    <!-- ===== Modal: queue player ===== -->
+    <div id="modal-player" class="modal modal--player" role="dialog" aria-modal="true"
+        aria-labelledby="player-video-title">
+        <div class="player">
+            <header class="player__header">
+                <div class="player__title-wrap">
+                    <div class="player__icon"><i class="fa-brands fa-youtube"></i></div>
+                    <div class="player__titles">
+                        <h3 id="player-video-title" class="player__title">YouTube Queue Player</h3>
+                        <span id="player-queue-subtitle" class="player__subtitle"></span>
+                    </div>
+                </div>
+                <button id="btn-close-player" class="player__close" type="button" aria-label="Close player">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </header>
+            <div class="player__body">
+                <section class="player__main">
+                    <div class="player__frame-wrap">
+                        <div id="yt-player-container" class="player__frame"></div>
+                    </div>
+                    <div class="player__controls">
+                        <button id="player-btn-prev" class="player__control" type="button" title="Previous video"
+                            aria-label="Previous video"><i class="fa-solid fa-backward-step"></i></button>
+                        <button id="player-btn-next" class="player__control" type="button" title="Next video"
+                            aria-label="Next video"><i class="fa-solid fa-forward-step"></i></button>
+                        <button id="player-btn-shuffle" class="player__control" type="button" title="Toggle shuffle"
+                            aria-label="Toggle shuffle"><i class="fa-solid fa-shuffle"></i></button>
+                        <button id="player-btn-loop" class="player__control" type="button"
+                            title="Toggle queue repeat" aria-label="Toggle queue repeat">
+                            <i class="fa-solid fa-repeat"></i></button>
+                        <span class="player__now-playing"><i class="fa-solid fa-circle-play"></i> Now playing</span>
+                    </div>
+                </section>
+                <aside class="player__queue">
+                    <div class="player__queue-header">
+                        <h4><i class="fa-solid fa-list-ul"></i> Up Next</h4>
+                        <span id="player-queue-count">0 items</span>
+                    </div>
+                    <div id="player-queue-list" class="player__queue-list"></div>
+                </aside>
+            </div>
+        </div>
+    </div>
+    <!-- ===== Modal: import ===== -->
+    <div id="modal-import" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-import-title">
+        <div class="modal__box modal__box--xl">
+            <div class="modal__head">
+                <h3 id="modal-import-title" class="modal__title">
+                    <span class="modal__chip"><i class="fa-solid fa-cloud-arrow-down"></i></span>
+                    Import YouTube Playlist or Links
+                </h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="tabs" role="tablist">
+                <button class="tab is-active" type="button" role="tab" data-tab="playlist">
+                    <i class="fa-solid fa-layer-group"></i> YouTube Playlist URL
+                </button>
+                <button class="tab" type="button" role="tab" data-tab="bulk">
+                    <i class="fa-solid fa-list-check"></i> Bulk Video URLs
+                </button>
+            </div>
+            <form id="form-import-playlist" class="form">
+                <div class="field">
+                    <label class="field__label" for="input-playlist-url">YouTube Playlist URL or Playlist ID *</label>
+                    <input class="input" type="text" id="input-playlist-url" required
+                        placeholder="e.g. https://www.youtube.com/playlist?list=PL4cUxeGkcC9gceU_pLfNzp281s22f">
+                </div>
+                <div class="field">
+                    <span class="field__label">Import Destination</span>
+                    <div class="choice-row">
+                        <label class="choice">
+                            <input type="radio" name="playlist-dest-type" value="new" checked> Create New Playlist
+                        </label>
+                        <label class="choice">
+                            <input type="radio" name="playlist-dest-type" value="existing"> Add into Existing
+                        </label>
+                    </div>
+                    <div id="dest-existing-select-wrap" hidden>
+                        <select id="select-import-existing-playlist" class="input" aria-label="Existing playlist"></select>
+                    </div>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" id="btn-submit-playlist-import" class="btn btn--purple">
+                        <i class="fa-solid fa-download"></i> Fetch &amp; Import Playlist
+                    </button>
+                </div>
+            </form>
+            <form id="form-import-bulk" class="form" hidden>
+                <div class="field">
+                    <label class="field__label" for="select-bulk-target-playlist">Target Playlist</label>
+                    <select id="select-bulk-target-playlist" class="input"></select>
+                </div>
+                <div class="field">
+                    <label class="field__label" for="input-bulk-urls">Paste YouTube Video URLs (One per line) *</label>
+                    <textarea class="input input--mono" id="input-bulk-urls" rows="6" required
+                        placeholder="https://www.youtube.com/watch?v=L_LUpnjgPso&#10;https://youtu.be/jfKfPfyJRdk"></textarea>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" id="btn-submit-bulk-import" class="btn btn--red">
+                        <i class="fa-solid fa-file-import"></i> Process Links
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== Modal: create / edit playlist ===== -->
+    <div id="modal-playlist" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-playlist-title">
+        <div class="modal__box modal__box--md">
+            <div class="modal__head">
+                <h3 id="modal-playlist-title" class="modal__title">Create New Playlist</h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-playlist" class="form">
+                <input type="hidden" id="input-playlist-id">
+                <div class="field">
+                    <label class="field__label" for="input-playlist-title">Playlist Title *</label>
+                    <input class="input" type="text" id="input-playlist-title" required
+                        placeholder="e.g. Modern Web Development 2026">
+                </div>
+                <div class="field">
+                    <label class="field__label" for="input-playlist-desc">Description</label>
+                    <textarea class="input" id="input-playlist-desc" rows="3" placeholder="Brief summary..."></textarea>
+                </div>
+                <div class="field">
+                    <label class="field__label" for="input-playlist-color">Theme Accent Color</label>
+                    <select class="input" id="input-playlist-color">
+                        <option value="red">Red Accent</option>
+                        <option value="blue">Blue Accent</option>
+                        <option value="emerald">Emerald Green</option>
+                        <option value="purple">Purple Accent</option>
+                        <option value="amber">Amber Gold</option>
+                        <option value="pink">Pink Accent</option>
+                    </select>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn btn--red">Save Playlist</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== Modal: add / edit video ===== -->
+    <div id="modal-video" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-video-title-text">
+        <div class="modal__box modal__box--md">
+            <div class="modal__head">
+                <h3 id="modal-video-title-text" class="modal__title">Add Video</h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-video" class="form">
+                <input type="hidden" id="input-video-edit-id">
+                <input type="hidden" id="input-video-original-playlist-id">
+                <div class="field">
+                    <label class="field__label" for="input-video-url">YouTube URL or Video ID *</label>
+                    <input class="input" type="text" id="input-video-url" required
+                        placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div class="field">
+                    <label class="field__label" for="input-video-target-playlist">Destination Playlist</label>
+                    <select class="input" id="input-video-target-playlist"></select>
+                </div>
+                <div class="field">
+                    <label class="field__label" for="input-video-custom-title">Custom Title (Optional)</label>
+                    <input class="input" type="text" id="input-video-custom-title"
+                        placeholder="Leave empty to auto-fetch video title">
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn btn--red">Save Video</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== Modal: merge playlists ===== -->
+    <div id="modal-merge" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-merge-title">
+        <div class="modal__box modal__box--lg">
+            <div class="modal__head">
+                <h3 id="modal-merge-title" class="modal__title">
+                    <i class="fa-solid fa-code-merge ic-purple"></i> Playlist Merging Tool
+                </h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-merge" class="form">
+                <div class="field">
+                    <span class="field__label">Select Source Playlists (Pick 2 or more)</span>
+                    <div id="merge-source-list" class="merge-list"></div>
+                </div>
+                <div class="field">
+                    <span class="field__label">Merge Destination</span>
+                    <div class="choice-row">
+                        <label class="choice">
+                            <input type="radio" name="merge-target-type" value="new" checked> Create New Playlist
+                        </label>
+                        <label class="choice">
+                            <input type="radio" name="merge-target-type" value="existing"> Merge into Existing
+                        </label>
+                    </div>
+                    <div id="merge-new-container">
+                        <input class="input" type="text" id="input-merge-new-title" placeholder="Merged Playlist Title"
+                            aria-label="Merged playlist title">
+                    </div>
+                    <div id="merge-existing-container" hidden>
+                        <select class="input" id="input-merge-existing-id" aria-label="Existing playlist"></select>
+                    </div>
+                </div>
+                <div class="form__options">
+                    <label class="choice">
+                        <input type="checkbox" id="input-merge-dedupe" checked>
+                        <span>Remove duplicate videos automatically (Matches Video ID)</span>
+                    </label>
+                    <label class="choice">
+                        <input type="checkbox" id="input-merge-delete-sources">
+                        <span>Delete original source playlists after merge</span>
+                    </label>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn btn--violet">Execute Merge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== Modal: settings ===== -->
+    <div id="modal-settings" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title">
+        <div class="modal__box modal__box--md">
+            <div class="modal__head">
+                <h3 id="modal-settings-title" class="modal__title">
+                    <i class="fa-solid fa-gear"></i> Settings &amp; API Config
+                </h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-settings" class="form">
+                <div class="field">
+                    <label class="field__label" for="input-api-key">YouTube Data API v3 Key</label>
+                    <input class="input input--mono" type="password" id="input-api-key" placeholder="AIzaSy..."
+                        autocomplete="off">
+                </div>
+                <div class="storage-row">
+                    <span>Local Storage Usage</span>
+                    <span id="storage-size-display">0 KB</span>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn btn--red">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== Modal: move / copy video ===== -->
+    <div id="modal-move-copy" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-move-title">
+        <div class="modal__box modal__box--sm">
+            <div class="modal__head">
+                <h3 id="modal-move-title" class="modal__title">Move / Copy Video</h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-move-copy" class="form">
+                <input type="hidden" id="move-video-id">
+                <input type="hidden" id="move-source-playlist-id">
+                <div class="field">
+                    <label class="field__label" for="move-target-playlist-id">Target Playlist</label>
+                    <select class="input" id="move-target-playlist-id"></select>
+                </div>
+                <div class="choice-row">
+                    <label class="choice">
+                        <input type="radio" name="move-action-type" value="move" checked> Move Video
+                    </label>
+                    <label class="choice">
+                        <input type="radio" name="move-action-type" value="copy"> Copy Video
+                    </label>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn btn--red">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== Modal: export links ===== -->
+    <div id="modal-export-text" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-export-title">
+        <div class="modal__box modal__box--lg">
+            <div class="modal__head">
+                <h3 id="modal-export-title" class="modal__title">
+                    <i class="fa-solid fa-copy ic-amber"></i> Playlist Video Links
+                </h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="form">
+                <p class="hint">Copy all YouTube URLs from the active view:</p>
+                <textarea id="export-text-area" class="input input--mono" rows="8" readonly
+                    aria-label="Video links"></textarea>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Close</button>
+                    <button id="btn-copy-export-text" class="btn btn--amber" type="button">
+                        <i class="fa-solid fa-clipboard"></i> Copy to Clipboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===== Modal: confirmation ===== -->
+    <div id="modalConfirm" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle"
+        aria-describedby="confirmMessage">
+        <div class="modal__box modal__box--sm confirm">
+            <div class="confirm__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div>
+                <h4 id="confirmTitle" class="confirm__title">Remove Video?</h4>
+                <p id="confirmMessage" class="confirm__message">Are you sure you want to proceed?</p>
+            </div>
+            <div class="confirm__actions">
+                <button class="btn btn--ghost btn--sm" type="button" data-close-modal>Cancel</button>
+                <button id="confirmActionButton" class="btn btn--red btn--sm" type="button">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <button id="scroll-top" class="scroll-top" type="button" aria-label="Scroll to top">
+        <span class="scroll-top__inner"><i class="fa-solid fa-arrow-up"></i></span>
+    </button>
+    <script src="script.js"></script>
+</body>
+</html>
