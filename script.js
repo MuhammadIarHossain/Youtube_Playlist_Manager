@@ -792,15 +792,7 @@ async function handlePlaylistImport(event) {
    setBusy(submitBtn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...');
    try {
       if (!state.apiKey.trim()) {
-         const shell = createPlaylist({
-            title: `YouTube Playlist (${playlistId.slice(0, 8)}...)`,
-            description: `Imported YouTube playlist ${playlistId}`,
-            category: 'Imported',
-            color: 'purple'
-         });
-         state.playlists.push(shell);
-         state.activeView = shell.id;
-         showToast('API key is not configured, so only a playlist shell was created. Add links with Bulk Importer or configure your API key.', 'info');
+         showToast('API key is not configured!', 'error');
       } else {
          const result = await fetchYouTubePlaylist(playlistId);
          let imported = result.videos;
