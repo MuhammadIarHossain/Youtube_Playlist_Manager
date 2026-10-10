@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.min.css">
     <script src="https://www.youtube.com/iframe_api" async></script>
 </head>
 <body>
@@ -558,6 +558,36 @@
             </div>
         </div>
     </div>
+    <!-- ===== Modal: JSON import options ===== -->
+    <div id="modal-import-json" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-import-json-title">
+        <div class="modal__box modal__box--md">
+            <div class="modal__head">
+                <h3 id="modal-import-json-title" class="modal__title">Import Backup</h3>
+                <button class="icon-btn icon-btn--sm" type="button" data-close-modal aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div> 
+            <form id="form-import-json" class="form">
+                <p id="json-import-summary" class="field__label"></p>
+                <div class="field">
+                    <span class="field__label">How should it be imported?</span>
+                    <div class="choice-row">
+                        <label class="choice">
+                            <input type="radio" name="json-import-mode" value="new"> Add as new
+                        </label>
+                        <label class="choice">
+                            <input type="radio" name="json-import-mode" value="replace"> Replace all
+                        </label>
+                    </div>
+                    <p id="json-import-hint" class="confirm__message"></p>
+                </div>
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn btn--red">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- ===== Modal: confirmation ===== -->
     <div id="modalConfirm" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle"
         aria-describedby="confirmMessage">
@@ -577,6 +607,6 @@
     <button id="scroll-top" class="scroll-top" type="button" aria-label="Scroll to top">
         <span class="scroll-top__inner"><i class="fa-solid fa-arrow-up"></i></span>
     </button>
-    <script src="script.js"></script>
+    <script src="script.min.js"></script>
 </body>
 </html>
