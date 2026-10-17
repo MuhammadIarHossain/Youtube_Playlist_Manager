@@ -29,7 +29,7 @@ list=list.filter((v)=>v.watched);if(state.filterStatus==='unwatched')
 list=list.filter((v)=>!v.watched);if(state.filterStatus==='favorites')
 list=list.filter((v)=>v.favorite);const query=state.searchQuery.trim().toLowerCase();if(query){list=list.filter((v)=>[v.title,v.channel,v.category,...(v.tags||[])].some((text)=>(text||'').toLowerCase().includes(query)))}
 const sorters={newest:(a,b)=>(b.addedAt||0)-(a.addedAt||0),oldest:(a,b)=>(a.addedAt||0)-(b.addedAt||0),title:(a,b)=>(a.title||'').localeCompare(b.title||''),favorites:(a,b)=>Number(b.favorite)-Number(a.favorite)};return list.sort(sorters[state.sortOrder]||sorters.newest)}
-const UI_PREFS_KEY='playhub_yt_ui_prefs_v1';function loadUiPrefs(){try{const raw=localStorage.getItem(UI_PREFS_KEY);if(!raw)
+const UI_PREFS_KEY='yt_ui_prefs';function loadUiPrefs(){try{const raw=localStorage.getItem(UI_PREFS_KEY);if(!raw)
 return;const prefs=JSON.parse(raw);if(['newest','oldest','title','favorites'].includes(prefs.sortOrder))
 state.sortOrder=prefs.sortOrder;if(['grid','list'].includes(prefs.viewMode))
 state.viewMode=prefs.viewMode}catch(error){console.error('Error loading UI preferences',error)}}
@@ -58,7 +58,7 @@ throw new Error('Playlist not found or not accessible with this API key.');const
 let skipped=0;const videos=items.flatMap((item,index)=>{const ytId=videoIdOf(item);if(!ytId){skipped++;return[]}
 const detail=details.get(ytId);const placeholder=/^(private|deleted) video$/i.test((item.snippet?.title||'').trim());if(!detail||placeholder){skipped++;return[]}
 return[createVideo(ytId,{title:detail?.snippet?.title||item.snippet?.title,channel:detail?.snippet?.channelTitle||item.snippet?.videoOwnerChannelTitle||item.snippet?.channelTitle,duration:parseIsoDuration(detail?.contentDetails?.duration),thumbnail:pickThumbnail(detail?.snippet?.thumbnails)||pickThumbnail(item.snippet?.thumbnails),publishedAt:detail?.snippet?.publishedAt||item.snippet?.publishedAt},{tags:['imported'],addedAt:Date.now()+index})]});return{title:playlist.snippet?.title||'Imported YouTube Playlist',description:playlist.snippet?.description||'Imported directly via YouTube Data API v3',thumbnail:pickThumbnail(playlist.snippet?.thumbnails),videos,skipped}}
-const DURATION_CONCURRENCY=3;const DURATION_TIMEOUT_MS=12000;const UNRESOLVED_KEY='playhub_yt_unresolved_v1';const UNRESOLVED_TTL_MS=7*24*60*60*1000;const unresolvedDurations=(()=>{const entries=new Map();try{const stored=JSON.parse(localStorage.getItem(UNRESOLVED_KEY)||'{}');Object.entries(stored).forEach(([id,time])=>{if(Date.now()-Number(time)<UNRESOLVED_TTL_MS)
+const DURATION_CONCURRENCY=3;const DURATION_TIMEOUT_MS=12000;const UNRESOLVED_KEY='yt_playlist_unresolved';const UNRESOLVED_TTL_MS=7*24*60*60*1000;const unresolvedDurations=(()=>{const entries=new Map();try{const stored=JSON.parse(localStorage.getItem(UNRESOLVED_KEY)||'{}');Object.entries(stored).forEach(([id,time])=>{if(Date.now()-Number(time)<UNRESOLVED_TTL_MS)
 entries.set(id,Number(time));})}catch{}
 const persist=()=>{try{localStorage.setItem(UNRESOLVED_KEY,JSON.stringify(Object.fromEntries(entries)))}catch{}};return{has:(id)=>entries.has(id),add:(id)=>{entries.set(id,Date.now());persist()},clear:()=>{entries.clear();persist()}}})();let durationBackfillRunning=!1;let durationBackfillQueued=!1;let durationRefreshTimer=null;function whenYouTubeApiReady(timeoutMs=15000){return new Promise((resolve)=>{const started=Date.now();const check=()=>{if(window.YT?.Player)
 return resolve(!0);if(Date.now()-started>timeoutMs)
